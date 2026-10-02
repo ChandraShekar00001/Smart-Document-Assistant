@@ -1,0 +1,29 @@
+# Apex Global Technologies - Employee Handbook & Code of Conduct
+Document ID: AGT-HBK-2026-001
+Effective Date: January 1, 2026
+Version: 5.0
+Author: Legal, Compliance & Information Security
+
+Chapter 1: Welcome & Employment Standards
+1.1 Probationary Period:
+Every newly hired employee undergoes an introductory probationary evaluation period of 60 calendar days starting from their designated first day of employment. During this window, performance check-ins occur at Day 30 and Day 60 to verify role alignment and cultural integration.
+
+1.2 Equal Employment & Non-Discrimination:
+Apex Global Technologies strictly adheres to affirmative equal employment opportunities. Harassment, discrimination, or retaliation of any nature will result in immediate disciplinary escalation up to and including termination.
+
+Chapter 2: Information Security and Acceptable Use
+2.1 Password Security & Authentication:
+Corporate credentials must be a minimum of 14 alphanumeric characters with mixed casing, numbers, and symbols. Passwords must be rotated every 90 days. Mandatory Multi-Factor Authentication (MFA) using an approved time-based one-time password (TOTP) authenticator application (such as Google Authenticator or 1Password) is enforced across all systems. SMS-based 2FA is prohibited due to SIM-swapping vulnerabilities.
+
+2.2 Hardware and Endpoint Protection:
+Company-issued MacBooks and ThinkPads are centrally managed via Jamf and Intune. Laptops must never be left unattended in unattended vehicles or public coworking areas. Connecting unauthorized USB flash storage devices is automatically blocked by endpoint protection.
+
+2.3 Artificial Intelligence & Data Privacy:
+Employees must never paste proprietary source code, confidential client deliverables, or personally identifiable information (PII) into unvetted public third-party generative AI models. Only enterprise-approved LLM services with signed zero-data-retention agreements are authorized for internal workflows.
+
+Chapter 3: Compliance, Ethics, and Governance
+3.1 Ethics and Whistleblower Hotline:
+Employees witnessing financial impropriety, safety violations, or ethical breaches are protected under federal whistleblower protections. Reports can be submitted anonymously 24 hours a day, 7 days a week via email at ethics@apexglobal.example.com or via telephone hotline at +1-800-555-APEX.
+
+3.2 Outside Consulting & Conflict of Interest:
+Any secondary employment, board advisory position, or freelance technology consulting requires prior formal written disclosure to and approval from the Chief Legal Officer (CLO) before entering any agreement.
