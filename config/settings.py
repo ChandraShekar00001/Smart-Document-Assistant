@@ -14,21 +14,16 @@ load_dotenv(dotenv_path=env_path, override=False)
 BASE_DIR = PROJECT_ROOT
 DATA_DIR = BASE_DIR / "data"
 UPLOADS_DIR = DATA_DIR / "uploads"
-VECTOR_STORE_DIR = DATA_DIR / "vector_store"
 SAMPLE_DOCS_DIR = DATA_DIR / "sample_documents"
 DOCS_DIR = BASE_DIR / "docs"
 
 # Ensure runtime directories exist
 UPLOADS_DIR.mkdir(parents=True, exist_ok=True)
-VECTOR_STORE_DIR.mkdir(parents=True, exist_ok=True)
 SAMPLE_DOCS_DIR.mkdir(parents=True, exist_ok=True)
 
-# Vector Store Persistence Files
-VECTOR_STORE_DIR.mkdir(parents=True, exist_ok=True)
+# ChromaDB Persistence Directory
 CHROMA_PERSIST_DIR = DATA_DIR / "chroma_db"
 CHROMA_PERSIST_DIR.mkdir(parents=True, exist_ok=True)
-INDEX_FILE_PATH = VECTOR_STORE_DIR / "faiss_index.bin"
-METADATA_FILE_PATH = VECTOR_STORE_DIR / "metadata.json"
 
 # LLM Configuration (Groq)
 GROQ_API_KEY = os.getenv("GROQ_API_KEY", "").strip()

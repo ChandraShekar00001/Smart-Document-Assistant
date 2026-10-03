@@ -83,7 +83,7 @@ def test_delete_document(populated_vector_store, embedding_service):
 
 def test_empty_vector_store_retrieval(tmp_path, embedding_service):
     """Verify empty vector store returns empty list gracefully without errors."""
-    empty_vs = VectorStore(dimension=embedding_service.dimension, index_path=tmp_path / "empty.bin", metadata_path=tmp_path / "empty.json")
+    empty_vs = VectorStore(dimension=embedding_service.dimension, persist_dir=tmp_path / "chroma_db")
     retriever = Retriever(vector_store=empty_vs, embedding_service=embedding_service)
 
     results = retriever.retrieve("Any question")

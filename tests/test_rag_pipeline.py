@@ -43,7 +43,7 @@ def test_rag_pipeline_unknown_answer_on_low_relevance(populated_vector_store, em
 def test_rag_pipeline_empty_vector_store(tmp_path, embedding_service, mock_llm_service):
     """Verify that asking when no documents are uploaded informs the user clearly."""
     from src.vector_store import VectorStore
-    empty_vs = VectorStore(dimension=embedding_service.dimension, index_path=tmp_path / "e.bin", metadata_path=tmp_path / "e.json")
+    empty_vs = VectorStore(dimension=embedding_service.dimension, persist_dir=tmp_path / "chroma_db")
     pipeline = RAGPipeline(
         vector_store=empty_vs,
         embedding_service=embedding_service,

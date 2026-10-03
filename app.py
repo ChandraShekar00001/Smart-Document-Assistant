@@ -20,9 +20,8 @@ from config.settings import (
     DEFAULT_GROQ_MODEL,
     DEFAULT_RELEVANCE_THRESHOLD,
     DEFAULT_TOP_K,
+    CHROMA_PERSIST_DIR,
     GROQ_API_KEY,
-    INDEX_FILE_PATH,
-    METADATA_FILE_PATH,
     SAMPLE_DOCS_DIR,
     UPLOADS_DIR,
     get_groq_api_key,
@@ -113,8 +112,7 @@ init_session_state()
 embedding_svc = get_embedding_service()
 vector_store = VectorStore(
     dimension=embedding_svc.dimension,
-    index_path=INDEX_FILE_PATH,
-    metadata_path=METADATA_FILE_PATH,
+    persist_dir=CHROMA_PERSIST_DIR,
 )
 vector_store.load()
 

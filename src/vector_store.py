@@ -25,21 +25,11 @@ class VectorStore:
         dimension: int = 384,
         persist_dir: Path | str | None = None,
         collection_name: str = "documents",
-        index_path: Path | str | None = None,
-        metadata_path: Path | str | None = None,
     ):
         self.dimension = dimension
         self.collection_name = collection_name
 
-        # Determine persistence directory
-        if persist_dir is not None:
-            self.persist_dir = Path(persist_dir)
-        elif index_path is not None:
-            # If a file path was passed, use its directory for Chroma persistence
-            p = Path(index_path)
-            self.persist_dir = p.parent / "chroma_db" if p.suffix else p
-        else:
-            self.persist_dir = Path(CHROMA_PERSIST_DIR)
+        self.persist_dir = Path(persist_dir) if persist_dir is not None else Path(CHROMA_PERSIST_DIR)
 
         self._client = None
         self._collection = None
@@ -236,7 +226,7 @@ class VectorStore:
 
         return list(doc_stats.values())
 
-    def save(self, index_path: Path | None = None, metadata_path: Path | None = None) -> None:
+    def save(self) -> None:
         """Persist vector store state.
 
         ChromaDB PersistentClient automatically flushes and persists to disk.
@@ -244,7 +234,7 @@ class VectorStore:
         """
         pass
 
-    def load(self, index_path: Path | None = None, metadata_path: Path | None = None) -> bool:
+    def load(self) -> bool:
         """Load persisted collection and chunk metadata from disk into memory.
 
         Returns:

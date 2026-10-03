@@ -16,6 +16,7 @@ venv.bak/
 # Uploaded documents and vector storage index files
 data/uploads/*
 !data/uploads/.gitkeep
+data/chroma_db/
 data/vector_store/*
 !data/vector_store/.gitkeep
 
