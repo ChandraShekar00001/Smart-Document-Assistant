@@ -482,11 +482,16 @@ with tab_arch:
             end
 
             subgraph Summarization["Document Summarization Pipeline"]
-                DocText[Full Document Text] --> CheckLen{"<= 100k Chars?"}
-                CheckLen -- "Yes" --> SinglePass[Single-Pass LLM Call: 1 Request]
-                CheckLen -- "No" --> MapReduce[Fallback Map-Reduce: Stops on 429]
-                SinglePass --> DocSummary([Document Insights: Summary, Key Points, Numbers, Action Items])
-                MapReduce --> DocSummary
+                DocText --> CacheCheck{"Summary cached?"}
+                CacheCheck -- "Yes" --> DocSummary([Document Insights: Summary, Key Points, Numbers, Action Items])
+                CacheCheck -- "No" --> TokenBudget{"Estimated input <= safe budget?\n(Default: 5,138 tokens)"}
+                TokenBudget -- "Within budget" --> GroqSummary[Single Groq Summary Call]
+                TokenBudget -- "Over budget" --> LocalCompress[Local Heuristic Compression: No API Call]
+                LocalCompress --> CompressedFits{"Compressed text within budget?"}
+                CompressedFits -- "Yes" --> GroqSummary
+                CompressedFits -- "No" --> TooLarge[User-Friendly Warning: No API Call]
+                GroqSummary -- "Valid response" --> DocSummary
+                GroqSummary -- "429 / rate limit" --> RateLimitStop[Return Warning; Stop Without Retry]
             end
         ```
         """

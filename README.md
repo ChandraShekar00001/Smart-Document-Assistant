@@ -60,7 +60,7 @@ The Smart Document Assistant addresses this by pairing a fast local dense embedd
   > *"I couldn't find sufficient information to answer this question in the uploaded documents."*
 * **Verifiable Source Attribution**: Every response provides expandable source cards displaying the exact filename, page number (or N/A indicator for plain text), cosine similarity score, and verbatim excerpt.
 * **Persistent Local Vector Database**: Built on ChromaDB `PersistentClient` with persistent SQLite/HNSW indexing, eliminating re-embedding on app restarts.
-* **Automatic Document Summarization**: Independent creative feature offering single-pass structured insights (Summary, Key Points, Important Numbers, Action Items) for small and medium documents up to 100,000 characters (~25–30 pages) in a single API call, with graceful section-based fallback and immediate rate-limit abortion for exceptionally large documents. Includes SHA-256 caching to avoid redundant API costs.
+* **Automatic Document Summarization**: Produces structured insights (Summary, Key Points, Important Numbers, Action Items) using a default safe input budget of 5,138 estimated tokens. Documents that fit use one Groq call; larger documents are locally compressed with heuristics and sent in one Groq call only if the compressed text fits. If it remains over budget, the app returns a user-friendly warning without an API call. Rate-limit errors stop immediately without retries. SHA-256 caching avoids redundant API calls.
 * **Interactive UI**: Built with Streamlit, providing multi-document upload, sample data loading with 1 click, document deletion, conversation history, and an internal chunk inspector.
 
 ---
@@ -103,7 +103,7 @@ The system cleanly separates three distinct workflows:
 2. **Online RAG Query Pipeline**:
    `User Query` → `Query Embedding` → `ChromaDB Cosine Search` → `Relevance Filter (>= 0.35)` → `Context Bounding (Max 6,000 chars)` → `Anti-Injection Prompt` → `Groq (openai/gpt-oss-120b)` → `Grounded Answer + Source Citations`.
 3. **Automatic Document Summarization Pipeline**:
-   `Selected Document` → `SHA-256 Cache Check` → `Length Router (<= 100k vs > 100k chars)` → `Single Pass LLM Call OR Section Map-Reduce with 429 Early-Exit` → `Structured Document Insights (Summary, Key Points, Numbers, Action Items)`.
+   `Selected Document` → `SHA-256 Cache Check` → `Estimated Token-Budget Check (5,138 input tokens by default)` → `One-Pass Groq Call if Within Budget OR Local Heuristic Compression` → `One Groq Call if Compressed Text Fits OR User Warning with No API Call` → `Structured Document Insights (Summary, Key Points, Numbers, Action Items)`. Rate-limit errors return immediately without retrying.
 
 *An editable Mermaid diagram is available in [`docs/architecture.md`](docs/architecture.md).*
 
@@ -174,7 +174,7 @@ smart-document-assistant/
 │   ├── retriever.py           # Semantic search & relevance threshold filtering
 │   ├── llm_service.py         # Groq LLM integration & strict prompts
 │   ├── rag_pipeline.py        # End-to-end RAG workflow orchestrator
-│   ├── summarizer.py          # Document summarizer with map-reduce & cache
+│   ├── summarizer.py          # Token-budget-aware summarizer with local compression & cache
 │   └── source_formatter.py    # Citation and excerpt formatter
 ├── tests/
 │   ├── __init__.py

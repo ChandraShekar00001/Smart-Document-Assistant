@@ -9,7 +9,7 @@ This document details the architectural design, component interactions, and data
 The system is organized into three decoupled pipelines:
 1. **Document Ingestion & Indexing Pipeline (Offline/Batch)**: Ingests documents (PDF, TXT, DOCX), performs text extraction and cleaning, segments text recursively with metadata preservation, generates normalized dense embeddings, and stores them in a local persistent ChromaDB vector store.
 2. **Retrieval-Augmented Generation (RAG) Pipeline (Online)**: Takes user queries, embeds them, performs similarity search in ChromaDB, filters by relevance threshold, bounds context length, wraps context in anti-injection boundaries, and invokes Groq (`openai/gpt-oss-120b`) to produce factual answers with precise source citations.
-3. **Automatic Document Summarization Pipeline**: Takes complete document text, provides single-pass structured insights (Summary, Key Points, Important Numbers, Action Items) for small/medium documents in a single API call, and provides fallback section map-reduce with immediate rate-limit abortion for massive documents, complete with SHA-256 caching.
+3. **Automatic Document Summarization Pipeline**: Checks a configurable estimated-token input budget, summarizes fitting documents with one Groq call, and locally compresses larger documents before making at most one call. If compressed text remains over budget, it returns a user-friendly warning without calling the API. Rate-limit errors return immediately without retries. Successful summaries are cached by SHA-256.
 
 ---
 
@@ -67,20 +67,28 @@ flowchart TD
         SelectDoc["Selected Document"]
         CacheCheck{"In Cache?"}
         CachedSumm["Return Cached Summary"]
-        DocLengthCheck{"Length > 100k chars?"}
-        SinglePass["Single-Pass Groq Summary (1 API Call)"]
-        MapReduce["Fallback Map-Reduce:\n(Stops on 429 Error)"]
+        TokenBudgetCheck{"Estimated input <= safe token budget?\n(Default: 5,138 tokens)"}
+        LocalCompress["Local Heuristic Compression\n(No LLM calls)"]
+        CompressedFits{"Compressed input within budget?"}
+        GroqSummary["Single Groq Summary Call\n(At most one request)"]
+        TooLargeWarning["User-Friendly Too-Large Warning\n(No API call)"]
+        RateLimitStop["Return Rate-Limit Warning\n(Stop immediately; no retry)"]
         SaveCache["Cache Summary in Memory"]
         FinalSummary["Structured Summary Output\n(Summary, Key Points, Numbers, Action Items)"]
 
         SelectDoc --> CacheCheck
         CacheCheck -- "Yes" --> CachedSumm
-        CacheCheck -- "No" --> DocLengthCheck
-        DocLengthCheck -- "<= 100k chars" --> SinglePass
-        DocLengthCheck -- "> 100k chars" --> MapReduce
-        SinglePass --> SaveCache
-        MapReduce --> SaveCache
+        CacheCheck -- "No" --> TokenBudgetCheck
+        TokenBudgetCheck -- "Within budget" --> GroqSummary
+        TokenBudgetCheck -- "Over budget" --> LocalCompress
+        LocalCompress --> CompressedFits
+        CompressedFits -- "Yes" --> GroqSummary
+        CompressedFits -- "No" --> TooLargeWarning
+        GroqSummary -- "Valid response" --> SaveCache
+        GroqSummary -- "429 / rate limit" --> RateLimitStop
         SaveCache --> FinalSummary
+        TooLargeWarning --> UI
+        RateLimitStop --> UI
     end
 
     %% Connections to UI
@@ -99,8 +107,8 @@ flowchart TD
 
     class UI,User primary;
     class Chroma,Uploads storage;
-    class GroqLLM,SinglePass,MapReduce llm;
-    class UnknownResp reject;
+    class GroqLLM,GroqSummary llm;
+    class UnknownResp,TooLargeWarning,RateLimitStop reject;
 ```
 
 ---
@@ -126,3 +134,11 @@ flowchart TD
 3. **Untrusted Data Boundaries**: Context excerpts are explicitly encapsulated within `<document_context>` XML tags. The system prompt instructs the model to ignore instructions inside excerpts, defending against prompt injection.
 4. **Contradiction Resolution**: The system instructs the model to identify conflicting statements across documents and cite both sources rather than arbitrarily selecting one.
 5. **No Hallucinated Citations**: Source attribution is constructed deterministically from retrieved `TextChunk` metadata objects, not generated freely by the LLM.
+
+### 3.4 Token-Budget-Aware Document Insights
+- **Default budget**: `SUMMARY_SAFE_INPUT_TOKENS` is calculated as `SUMMARY_SAFE_TOKEN_BUDGET - SUMMARY_MAX_OUTPUT_TOKENS - SUMMARY_PROMPT_OVERHEAD_TOKENS`, which is 5,138 input tokens with the current defaults (6,000 - 512 - 350). These settings can be overridden with environment variables.
+- `GROQ_FREE_TPM_LIMIT` is also configured (8,000 by default), but it is not currently used to calculate the summarizer's safe input budget.
+- **Estimation**: The summarizer estimates tokens as the larger of `int(word_count * 1.35)` and `character_count // 4`.
+- **Compression path**: If the original text exceeds the safe input budget, local heuristics retain headings and high-value metrics, dates, obligations, and topic sentences, then sample/refine if needed. This stage makes no LLM calls.
+- **API calls**: Text that fits directly, or locally compressed text that fits, is sent for one Groq summary request. If compression still exceeds the budget, a user-friendly warning is returned without an API call.
+- **Rate limits**: Groq rate-limit responses are returned as warnings immediately. The summarizer makes no retry or follow-up summary call and does not cache error responses.

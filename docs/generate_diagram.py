@@ -1,8 +1,13 @@
 """Script to generate high-resolution architecture diagram docs/architecture.png."""
 
 from pathlib import Path
+import sys
+
 import matplotlib.pyplot as plt
 import matplotlib.patches as patches
+
+sys.path.insert(0, str(Path(__file__).resolve().parent.parent))
+from config.settings import SUMMARY_SAFE_INPUT_TOKENS
 
 # Ensure docs directory exists
 docs_dir = Path("docs")
@@ -138,9 +143,9 @@ ax.text(
 )
 
 summ_bg = patches.FancyBboxPatch(
-    (10.9, 4.0),
+    (10.9, 0.35),
     4.6,
-    5.7,
+    9.35,
     boxstyle="round,pad=0.15",
     facecolor="#FAF5FF",
     edgecolor="#9333EA",
@@ -218,27 +223,41 @@ ax.annotate(
 ax.text(9.1, 3.3, "Below\nThreshold", fontsize=7.5, color="#DC2626", ha="center")
 
 # 3. Summarization Nodes
-draw_box(11.4, 8.5, 3.6, 0.7, "Document Text Extraction", "Full document text extraction", "#F3E8FF", "#9333EA")
-draw_box(11.4, 7.3, 3.6, 0.7, "In-Memory Summary Cache", "Hash check (avoid redundant calls)", "#F3E8FF", "#9333EA")
-draw_box(11.4, 6.1, 3.6, 0.7, "Document Insights Router", "<=100k chars: 1 Call | >100k: Fallback", "#F3E8FF", "#9333EA")
-draw_box(11.4, 4.7, 3.6, 0.8, "Single-Pass / Synthesis", "1 Call (Summary, Key Points, etc.)", "#E0E7FF", "#4F46E5")
+draw_box(11.4, 8.55, 3.6, 0.65, "Document Text Extraction", "Full document text", "#F3E8FF", "#9333EA")
+draw_box(11.4, 7.65, 3.6, 0.65, "In-Memory Summary Cache", "SHA-256 hash check", "#F3E8FF", "#9333EA")
+draw_box(
+    11.4,
+    6.75,
+    3.6,
+    0.65,
+    "Estimated Token Budget Check",
+    f"<= {SUMMARY_SAFE_INPUT_TOKENS:,} estimated input tokens",
+    "#F3E8FF",
+    "#9333EA",
+)
+draw_box(13.3, 5.5, 2.0, 0.75, "Local Compression", "Heuristics; no API call", "#F3E8FF", "#9333EA")
+draw_box(13.3, 4.35, 2.0, 0.75, "Compressed Fits?", "Recheck token estimate", "#F3E8FF", "#9333EA")
+draw_box(11.1, 3.2, 1.8, 0.8, "Single Groq Call", "429: warn and stop", "#E0E7FF", "#4F46E5")
+draw_box(11.1, 1.95, 1.8, 0.8, "Document Insights", "Structured summary", "#F3E8FF", "#9333EA")
+draw_box(13.3, 1.95, 2.0, 0.8, "Too Large", "Friendly warning; no call", "#FEE2E2", "#DC2626")
 
-draw_arrow(13.2, 8.5, 13.2, 8.0)
-draw_arrow(13.2, 7.3, 13.2, 6.8)
-draw_arrow(13.2, 6.1, 13.2, 5.5)
+draw_arrow(13.2, 8.55, 13.2, 8.3)
+draw_arrow(13.2, 7.65, 13.2, 7.4)
+draw_arrow(12.0, 6.75, 12.0, 4.0, "Within budget")
+draw_arrow(14.2, 6.75, 14.3, 6.25, "Over budget")
+draw_arrow(14.3, 5.5, 14.3, 5.1)
+draw_arrow(13.3, 4.7, 12.9, 3.6, "Fits")
+draw_arrow(14.3, 4.35, 14.3, 2.75)
+draw_arrow(12.0, 3.2, 12.0, 2.75)
 
 # LLM connection to Summarizer
 ax.annotate(
     "",
-    xy=(11.4, 5.1),
+    xy=(11.1, 3.6),
     xytext=(9.8, 2.7),
     arrowprops=dict(arrowstyle="<->", color="#4F46E5", lw=1.3, linestyle="--"),
 )
 ax.text(10.6, 3.8, "Shared LLM\nService", fontsize=7.5, color="#4F46E5", ha="center")
-
-# Final Outputs
-draw_box(11.4, 2.3, 3.6, 0.8, "Structured Summary", "Executive Brief, Headings & Dates", "#F3E8FF", "#9333EA")
-draw_arrow(13.2, 4.7, 13.2, 3.1)
 
 draw_box(11.4, 0.4, 3.6, 0.8, "Verified Output to UI", "Answers, Citations & Source Excerpts", "#DBEAFE", "#2563EB")
 draw_arrow(9.8, 2.7, 11.4, 0.8)
